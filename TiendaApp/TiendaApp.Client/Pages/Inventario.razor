@@ -1,0 +1,87 @@
+﻿@page "/inventario"
+@using TiendaApp.Client.Models
+@inject HttpClient Http
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Inventario</PageTitle>
+
+<h3>Gestión de Inventario</h3>
+
+@if (productos == null)
+{
+    <p><em>Cargando productos...</em></p>
+}
+else
+{
+    <div class="card p-3 mb-4 shadow-sm">
+        <h5>Agregar Nuevo Producto</h5>
+        <div class="row g-3">
+            <div class="col-md-2">
+                <input @bind="nuevo.Codigo" class="form-control" placeholder="Código" />
+            </div>
+            <div class="col-md-4">
+                <input @bind="nuevo.Nombre" class="form-control" placeholder="Nombre del producto" />
+            </div>
+            <div class="col-md-2">
+                <input @bind="nuevo.Precio" type="number" step="0.01" class="form-control" placeholder="Precio" />
+            </div>
+            <div class="col-md-2">
+                <input @bind="nuevo.Stock" type="number" class="form-control" placeholder="Stock" />
+            </div>
+            <div class="col-md-2">
+                <button @onclick="GuardarProducto" class="btn btn-primary w-100">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in productos)
+            {
+                <tr>
+                    <td>@p.Codigo</td>
+                    <td>@p.Nombre</td>
+                    <td>@p.Precio.ToString("C")</td>
+                    <td>@p.Stock</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm">Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Producto>? productos;
+    private Producto nuevo = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProductos();
+    }
+
+    private async Task CargarProductos()
+    {
+        productos = await Http.GetFromJsonAsync<List<Producto>>("api/productos");
+    }
+
+    private async Task GuardarProducto()
+    {
+        if (!string.IsNullOrEmpty(nuevo.Nombre) && !string.IsNullOrEmpty(nuevo.Codigo))
+        {
+            await Http.PostAsJsonAsync("api/productos", nuevo);
+            nuevo = new Producto(); // Limpiar el formulario
+            await CargarProductos(); // Refrescar la lista
+        }
+    }
+}
