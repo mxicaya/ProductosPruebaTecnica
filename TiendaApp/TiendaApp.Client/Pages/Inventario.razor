@@ -52,9 +52,9 @@ else
                     <td>@p.Nombre</td>
                     <td>@p.Precio.ToString("C")</td>
                     <td>@p.Stock</td>
-                    <td>
-                        <button class="btn btn-danger btn-sm">Eliminar</button>
-                    </td>
+                    <button class="btn btn-danger btn-sm" @onclick="() => EliminarProducto(p.Id)">
+                        Eliminar
+                    </button>
                 </tr>
             }
         </tbody>
@@ -72,16 +72,29 @@ else
 
     private async Task CargarProductos()
     {
-        productos = await Http.GetFromJsonAsync<List<Producto>>("api/productos");
+        var todos = await Http.GetFromJsonAsync<List<Producto>>("api/productos");
+        productos = todos?.Where(p => p.Activo).ToList();
     }
 
     private async Task GuardarProducto()
     {
+        if (nuevo.Precio <= 0) { /* podrías mostrar un mensaje: Precio debe ser > 0 */ return; }
+        if (nuevo.Stock < 0) { return; }
+
         if (!string.IsNullOrEmpty(nuevo.Nombre) && !string.IsNullOrEmpty(nuevo.Codigo))
         {
             await Http.PostAsJsonAsync("api/productos", nuevo);
-            nuevo = new Producto(); // Limpiar el formulario
-            await CargarProductos(); // Refrescar la lista
+            nuevo = new Producto();
+            await CargarProductos();
+        }
+    }
+
+    private async Task EliminarProducto(int id)
+    {
+        var response = await Http.DeleteAsync($"api/productos/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            await CargarProductos(); // Refresca la lista para ocultar el producto "borrado"
         }
     }
 }
